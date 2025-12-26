@@ -193,6 +193,25 @@ map('n', '<leader>f', function()
     require('conform').format({ async = true, lsp_fallback = true })
 end)
 
+-- Diagnostics
+map('n', '<leader>dn', vim.diagnostic.goto_next)
+map('n', '<leader>dp', vim.diagnostic.goto_prev)
+map('n', '<leader>de', vim.diagnostic.open_float)
+
+------------------------------------------------------------
+-- Diagnostics (inline errors / warnings)
+------------------------------------------------------------
+vim.diagnostic.config({
+    virtual_text = {
+        spacing = 2,
+        prefix = "●",
+    },
+    signs = true,
+    underline = true,
+    update_in_insert = false,
+    severity_sort = true,
+})
+
 ------------------------------------------------------------
 -- Completion (nvim-cmp)
 ------------------------------------------------------------
