@@ -72,35 +72,81 @@ install_neovim_0115() {
     fi
 
     log "Installing Neovim $NEOVIM_VERSION"
-    local url="https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux64.tar.gz"
 
-    rm -f /tmp/nvim-linux64.tar.gz
-    curl -L -o /tmp/nvim-linux64.tar.gz "$url"
+    local arch
+    arch="$(uname -m)"
+    local tarball
 
-    sudo rm -rf /opt/nvim-linux64
-    sudo tar -C /opt -xzf /tmp/nvim-linux64.tar.gz
-    sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+    case "$arch" in
+        x86_64|amd64) tarball="nvim-linux-x86_64.tar.gz" ;;
+        aarch64|arm64) tarball="nvim-linux-arm64.tar.gz" ;;
+        *)
+            echo "ERROR: unsupported arch: $arch"
+            exit 1
+            ;;
+    esac
 
-    rm -f /tmp/nvim-linux64.tar.gz
+    local url="https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/${tarball}"
+
+    rm -f "/tmp/${tarball}"
+    # -f fail on HTTP errors, -L follow redirects
+    curl -fL -o "/tmp/${tarball}" "$url"
+
+    # sanity check (avoid tar on HTML/error pages)
+    if ! file "/tmp/${tarball}" | grep -qi 'gzip compressed'; then
+        echo "ERROR: downloaded file is not a gzip tarball:"
+        file "/tmp/${tarball}"
+        echo "URL was: $url"
+        exit 1
+    fi
+
+    sudo rm -rf /opt/nvim-linux-*
+    sudo tar -C /opt -xzf "/tmp/${tarball}"
+
+    # the extracted dir matches tarball base name
+    local extracted_dir="/opt/${tarball%.tar.gz}"
+    sudo ln -sf "${extracted_dir}/bin/nvim" /usr/local/bin/nvim
+
+    rm -f "/tmp/${tarball}"
     log "Neovim installed: $(nvim --version | head -n1)"
 }
 
 install_global_clis() {
-    log "Installing global npm CLIs (prettier/eslint/typescript-language-server)"
-    sudo npm install -g \
+    log "Installing global npm CLIs (prettier/eslint/typescript-language-server) as user"
+
+    if ! command -v npm >/dev/null 2>&1; then
+        echo "ERROR: npm not found in PATH for this user."
+        echo "If you use nvm, load it (new shell) or install nodejs/npm system-wide."
+        exit 1
+    fi
+
+    # Put npm global installs in ~/.local (no sudo needed)
+    ensure_path_local_bin
+    npm config set prefix "$HOME/.local"
+
+    npm install -g \
         typescript \
         typescript-language-server \
         prettier \
         eslint
 
-    log "Installing/Upgrading ruff (user)"
-    ensure_path_local_bin
-    python3 -m pip install --user --upgrade pip
-    python3 -m pip install --user --upgrade ruff
+    log "Installing/Upgrading ruff via pipx (PEP 668 safe)"
+    sudo apt install -y pipx
+    pipx ensurepath
+
+    # Make pipx-installed apps available for this run
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Install or upgrade ruff
+    if command -v ruff >/dev/null 2>&1; then
+        pipx upgrade ruff || true
+    else
+        pipx install ruff
+    fi
 
     if ! command -v ruff >/dev/null 2>&1; then
         echo "ERROR: ruff installed but not found in PATH."
-        echo "Add this to your shell rc (and re-login):"
+        echo "Add to your shell rc:"
         echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
         exit 1
     fi
