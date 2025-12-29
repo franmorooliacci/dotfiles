@@ -64,6 +64,14 @@ require('lazy').setup({
     },
     { 'lewis6991/gitsigns.nvim', opts = {} },
     { 'folke/trouble.nvim', opts = {} },
+    {
+        'lukas-reineke/indent-blankline.nvim',
+        main = 'ibl',
+        opts = {
+            indent = {char = '┊'},
+            scope = {enabled = false},
+        },
+    },
 
     -- File explorer
     { 'stevearc/oil.nvim', opts = {} },
@@ -139,7 +147,7 @@ require('lazy').setup({
         'stevearc/conform.nvim',
         opts = {
             format_on_save = function()
-                return { timeout_ms = 1500, lsp_fallback = true }
+                return { timeout_ms = 1500, lsp_fallback = false }
             end,
             formatters_by_ft = {
                 javascript = { 'prettier' },
@@ -258,7 +266,7 @@ if ok_cmp then
 end
 
 local function on_attach(client)
-    if client.name == 'ts_ls' then
+    if client.name == 'ts_ls' or client.name == 'eslint' then
         client.server_capabilities.documentFormattingProvider = false
     end
 end
