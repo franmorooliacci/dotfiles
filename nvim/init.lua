@@ -26,6 +26,14 @@ vim.opt.timeoutlen = 400
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 
+-- Folding
+vim.o.foldmethod = 'expr'
+vim.o.foldexpr = 'v:lua.vim.lsp.foldexpr()'
+vim.o.foldcolumn = '0'
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
 ------------------------------------------------------------
 -- Bootstrap lazy.nvim
 ------------------------------------------------------------
@@ -90,25 +98,6 @@ require('lazy').setup({
                 },
             },
         },
-    },
-
-    -- Folding
-    {
-        'kevinhwang91/nvim-ufo',
-        dependencies = { 'kevinhwang91/promise-async' },
-        event = 'BufReadPost',
-        config = function()
-            vim.o.foldcolumn = '0'
-            vim.o.foldlevel = 99
-            vim.o.foldlevelstart = 99
-            vim.o.foldenable = true
-
-            require('ufo').setup({
-                provider_selector = function(_, _, _)
-                    return { 'lsp', 'treesitter' }
-                end,
-            })
-        end,
     },
 
     --------------------------------------------------------
