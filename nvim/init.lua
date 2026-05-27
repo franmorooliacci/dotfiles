@@ -59,6 +59,14 @@ require('lazy').setup({
     { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
     { 'Mofiqul/dracula.nvim', name = 'dracula', priority = 1000 },
     { 'tanvirtin/monokai.nvim', name = 'monokai', priority = 1000 },
+    {
+        'ellisonleao/gruvbox.nvim',
+        priority = 1000,
+        config = function()
+            vim.o.background = 'dark'
+            vim.cmd.colorscheme('gruvbox')
+        end,
+    },
     { 'nvim-tree/nvim-web-devicons', lazy = true },
     { 'folke/which-key.nvim', opts = {} },
     {
@@ -95,6 +103,12 @@ require('lazy').setup({
                         ['<C-j>'] = 'move_selection_next',
                         ['<C-k>'] = 'move_selection_previous',
                     },
+                },
+                file_ignore_patterns = {
+                    'venv/.*',
+                    '.venv/.*',
+                    'node_modules/.*',
+                    '.git*',
                 },
             },
         },
@@ -193,7 +207,7 @@ require('lazy').setup({
 ------------------------------------------------------------
 local map = vim.keymap.set
 
-map('n', '<leader>ff', function() require('telescope.builtin').find_files() end)
+map('n', '<leader>ff', function() require('telescope.builtin').find_files({hidden = true}) end)
 map('n', '<leader>fg', function() require('telescope.builtin').live_grep() end)
 map('n', '<leader>fb', function() require('telescope.builtin').buffers() end)
 map('n', '<leader>e', function() require('oil').open() end)
@@ -226,7 +240,13 @@ vim.diagnostic.config({
     underline = true,
     update_in_insert = false,
     severity_sort = true,
+    float = {
+        border = "rounded",
+        source = "if_many"
+    }
 })
+
+vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
 
 ------------------------------------------------------------
 -- Completion (nvim-cmp)
@@ -310,5 +330,5 @@ vim.lsp.enable({
     'yamlls',
 })
 
-vim.cmd.colorscheme('monokai')
+vim.cmd.colorscheme('gruvbox')
 
