@@ -5,6 +5,7 @@
 -- Basics
 ------------------------------------------------------------
 vim.g.mapleader = ' '
+vim.g.python3_host_prog = vim.fn.exepath('python3.13')
 
 vim.opt.number = true
 vim.opt.relativenumber = true
@@ -59,14 +60,6 @@ require('lazy').setup({
     { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
     { 'Mofiqul/dracula.nvim', name = 'dracula', priority = 1000 },
     { 'tanvirtin/monokai.nvim', name = 'monokai', priority = 1000 },
-    {
-        'ellisonleao/gruvbox.nvim',
-        priority = 1000,
-        config = function()
-            vim.o.background = 'dark'
-            vim.cmd.colorscheme('gruvbox')
-        end,
-    },
     { 'nvim-tree/nvim-web-devicons', lazy = true },
     { 'folke/which-key.nvim', opts = {} },
     {
@@ -149,8 +142,8 @@ require('lazy').setup({
     },
 
     -- LSP tooling
-    { 'williamboman/mason.nvim', opts = {} },
-    { 'williamboman/mason-lspconfig.nvim', opts = {} },
+    { 'williamboman/mason.nvim' },
+    { 'williamboman/mason-lspconfig.nvim' },
     { 'neovim/nvim-lspconfig' },
 
     -- Completion
@@ -207,7 +200,7 @@ require('lazy').setup({
 ------------------------------------------------------------
 local map = vim.keymap.set
 
-map('n', '<leader>ff', function() require('telescope.builtin').find_files({hidden = true}) end)
+map('n', '<leader>ff', function() require('telescope.builtin').find_files({hidden = true, previewer = false}) end)
 map('n', '<leader>fg', function() require('telescope.builtin').live_grep() end)
 map('n', '<leader>fb', function() require('telescope.builtin').buffers() end)
 map('n', '<leader>e', function() require('oil').open() end)
@@ -273,13 +266,18 @@ cmp.setup({
 ------------------------------------------------------------
 -- LSP (Neovim 0.11.5)
 ------------------------------------------------------------
-require('mason').setup()
+require('mason').setup({
+    pip = {
+        upgrade_pip = true,
+        python_path = vim.fn.exepath('python3.13')
+    },
+})
 
 require('mason-lspconfig').setup({
     ensure_installed = {
         'ts_ls',
         'eslint',
-        'pyright',
+        'basedpyright',
         'html',
         'cssls',
         'jsonls',
@@ -306,15 +304,47 @@ vim.lsp.config('cssls', { capabilities = capabilities, on_attach = on_attach })
 vim.lsp.config('jsonls', { capabilities = capabilities, on_attach = on_attach })
 vim.lsp.config('yamlls', { capabilities = capabilities, on_attach = on_attach })
 
-vim.lsp.config('pyright', {
+vim.lsp.config('basedpyright', {
     capabilities = capabilities,
     on_attach = on_attach,
     settings = {
-        python = {
+        basedpyright = {
             analysis = {
-                typeCheckingMode = 'basic',
+                typeCheckingMode = 'basic', 
                 autoSearchPaths = true,
                 useLibraryCodeForTypes = true,
+                diagnosticSeverityOverrides = {
+                    --------------------------------------------------------
+                    -- 1. Django Framework Architecture Fixes
+                    --------------------------------------------------------
+                    -- Silences errors when overriding inner classes like `class Meta:`
+                    reportIncompatibleVariableOverride = "none",
+                    -- Silences errors when overriding model methods like `save(*args, **kwargs)`
+                    reportIncompatibleMethodOverride = "none",
+                    
+                    --------------------------------------------------------
+                    -- 2. Dynamic Attribute Fixes (The "Django Magic" Rules)
+                    --------------------------------------------------------
+                    -- Stops errors when using `.objects`, forward/reverse relations (`_set`), or dynamically attached properties
+                    reportGeneralTypeIssues = "none",
+                    -- Prevents errors when libraries don't ship with explicit typing files (.pyi)
+                    reportMissingTypeStubs = "none",
+
+                    --------------------------------------------------------
+                    -- 3. Implicit Typings (Prevents the "Type Everything" warnings)
+                    --------------------------------------------------------
+                    -- Lets you write `fields = [...]` or `model = X` without forcing you to add an explicit type annotation to every single line
+                    reportUnknownMemberType = "none",
+                    reportUnknownVariableType = "none",
+                    reportUnknownArgumentType = "none",
+                    reportUninitializedInstanceVariable = "none",
+                    
+                    --------------------------------------------------------
+                    -- 4. Generics Simplification
+                    --------------------------------------------------------
+                    -- Stops DRF from demanding things like `serializers.ModelSerializer[OrdenCompra]` instead of just `serializers.ModelSerializer`
+                    reportMissingTypeArgument = "none",
+                },
             },
         },
     },
@@ -323,12 +353,12 @@ vim.lsp.config('pyright', {
 vim.lsp.enable({
     'ts_ls',
     'eslint',
-    'pyright',
+    'basedpyright',
     'html',
     'cssls',
     'jsonls',
     'yamlls',
 })
 
-vim.cmd.colorscheme('gruvbox')
+vim.cmd.colorscheme('monokai')
 
