@@ -245,21 +245,20 @@ map('n', '<C-k>', '<C-w>k', { desc = 'Move to top split' })
 map('n', '<C-l>', '<C-w>l', { desc = 'Move to right split' })
 
 -- Navigate and review agent changes
-local gs = package.loaded.gitsigns
-map('n', ']c', function()
+map('n', '<leader>gj', function()
     if vim.wo.diff then return ']c' end
-    vim.schedule(function() gs.next_hunk() end)
+    vim.schedule(function() require('gitsigns').next_hunk() end)
     return '<Ignore>'
 end, { expr = true, desc = 'Jump to next change' })
 
-map('n', '[c', function()
+map('n', '<leader>gk', function()
     if vim.wo.diff then return '[c' end
-    vim.schedule(function() gs.prev_hunk() end)
+    vim.schedule(function() require('gitsigns').prev_hunk() end)
     return '<Ignore>'
 end, { expr = true, desc = 'Jump to previous change' })
 
-map('n', '<leader>hp', function() gs.preview_hunk() end, { desc = 'Preview hunk diff' })
-map('n', '<leader>gd', function() gs.diffthis() end, { desc = 'Side-by-side Git diff' })
+map('n', '<leader>gp', function() require('gitsigns').preview_hunk() end, { desc = 'Preview hunk diff' })
+map('n', '<leader>gd', function() require('gitsigns').diffthis() end, { desc = 'Side-by-side Git diff' })
 
 ------------------------------------------------------------
 -- Diagnostics (inline errors / warnings)
