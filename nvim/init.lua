@@ -35,6 +35,13 @@ vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
 vim.o.foldenable = true
 
+-- Auto-reload buffers when modified externally (OpenCode / Git)
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+    pattern = "*",
+    command = "if mode() != 'c' | checktime | endif",
+})
+
 ------------------------------------------------------------
 -- Bootstrap lazy.nvim
 ------------------------------------------------------------
@@ -153,6 +160,7 @@ require('lazy').setup({
     { 'saadparwaiz1/cmp_luasnip' },
 
     -- Editing helpers
+    { 'windwp/nvim-ts-autotag', opts = {} },
     { 'windwp/nvim-autopairs', opts = {} },
     { 'numToStr/Comment.nvim', opts = {} },
     { 'kylechui/nvim-surround', opts = {} },
@@ -174,6 +182,11 @@ require('lazy').setup({
                 html = { 'prettier' },
                 css = { 'prettier' },
                 python = { 'ruff_format' },
+            },
+            formatters = {
+                prettier = {
+                    prepend_args = { '--tab-width', '4' },
+                },
             },
         },
     },
@@ -203,6 +216,7 @@ local map = vim.keymap.set
 map('n', '<leader>ff', function() require('telescope.builtin').find_files({hidden = true, previewer = false}) end)
 map('n', '<leader>fg', function() require('telescope.builtin').live_grep() end)
 map('n', '<leader>fb', function() require('telescope.builtin').buffers() end)
+map('n', '<leader>gs', function() require('telescope.builtin').git_status() end, { desc = 'List modified files' })
 map('n', '<leader>e', function() require('oil').open() end)
 map('n', '<leader>xx', function() require('trouble').toggle() end)
 
@@ -221,6 +235,32 @@ map('n', '<leader>dn', vim.diagnostic.goto_next)
 map('n', '<leader>dp', vim.diagnostic.goto_prev)
 map('n', '<leader>de', vim.diagnostic.open_float)
 
+-- Oil navigation
+map('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
+
+-- Fast split navigation
+map('n', '<C-h>', '<C-w>h', { desc = 'Move to left split' })
+map('n', '<C-j>', '<C-w>j', { desc = 'Move to bottom split' })
+map('n', '<C-k>', '<C-w>k', { desc = 'Move to top split' })
+map('n', '<C-l>', '<C-w>l', { desc = 'Move to right split' })
+
+-- Navigate and review agent changes
+local gs = package.loaded.gitsigns
+map('n', ']c', function()
+    if vim.wo.diff then return ']c' end
+    vim.schedule(function() gs.next_hunk() end)
+    return '<Ignore>'
+end, { expr = true, desc = 'Jump to next change' })
+
+map('n', '[c', function()
+    if vim.wo.diff then return '[c' end
+    vim.schedule(function() gs.prev_hunk() end)
+    return '<Ignore>'
+end, { expr = true, desc = 'Jump to previous change' })
+
+map('n', '<leader>hp', function() gs.preview_hunk() end, { desc = 'Preview hunk diff' })
+map('n', '<leader>gd', function() gs.diffthis() end, { desc = 'Side-by-side Git diff' })
+
 ------------------------------------------------------------
 -- Diagnostics (inline errors / warnings)
 ------------------------------------------------------------
@@ -238,8 +278,6 @@ vim.diagnostic.config({
         source = "if_many"
     }
 })
-
-vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
 
 ------------------------------------------------------------
 -- Completion (nvim-cmp)
@@ -360,5 +398,5 @@ vim.lsp.enable({
     'yamlls',
 })
 
-vim.cmd.colorscheme('monokai')
+vim.cmd.colorscheme('dracula')
 
