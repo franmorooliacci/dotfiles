@@ -397,5 +397,5 @@ vim.lsp.enable({
     'yamlls',
 })
 
-vim.cmd.colorscheme('dracula')
+vim.cmd.colorscheme('monokai')
 
